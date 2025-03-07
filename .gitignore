@@ -1,1 +1,2 @@
-/ed_data/
+*.csv
+.DS_Store
