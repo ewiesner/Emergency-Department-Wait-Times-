@@ -6,4 +6,7 @@ dependencies:
   - python=3.11
   - sqlalchemy
   - psycopg2
-  - pandas
+  - pandas >= 2.0
+  - matplotlib >= 3.8
+  - seaborn
+  - scikit-learn >= 1.4

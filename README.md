@@ -1,4 +1,5 @@
 # Emergency-Department-Wait-Times-
+
  A project to predict emergency department treatment times for the Erdos Institute Data Science Bootcamp, Spring 2025
 
 Using the emergency department (ED) and hospital data from Mimic-IV https://mimic.mit.edu/docs/, we will build an interpretable model to predict total treatment time for a patient based on patient characteristics gathered before and including triage.  This will allow ED administrators and researchers to better schedule patients with regards to limited resources like rooms, tests, and staffing.  
