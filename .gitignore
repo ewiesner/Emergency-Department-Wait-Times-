@@ -1,4 +1,4 @@
-ed_data/
+MIMIC_data/
 .DS_Store
 Cleaning_old.ipynb
 Custom_Class_test.ipynb
