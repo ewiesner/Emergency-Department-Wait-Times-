@@ -35,4 +35,4 @@ class DataCleaner:
         self.df.loc[condition_dbp, 'dbp'] = np.nan
     
     def get_dataframe(self):
-        return 
+        return self.df
