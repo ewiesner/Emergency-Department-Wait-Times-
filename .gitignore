@@ -2,6 +2,8 @@ ed_data/
 .DS_Store
 <<<<<<< HEAD
 hosp_data/
+Custom_Class_test.ipynb
+*.csv
 =======
 Cleaning_old.ipynb
 Custom_Class_test.ipynb
