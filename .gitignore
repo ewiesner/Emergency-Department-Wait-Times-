@@ -4,6 +4,10 @@ ed_data/
 hosp_data/
 Custom_Class_test.ipynb
 *.csv
+EDA.ipynb
+read_csv_gz.py
+Custom_Class_test.ipynb
+
 =======
 Cleaning_old.ipynb
 Custom_Class_test.ipynb
