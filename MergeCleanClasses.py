@@ -3,20 +3,16 @@ import pandas as pd
 import re
 
 class DataMerge:
-    def __init__(self, df_edstays, df_triage, df_patients, df_admission):
+    def __init__(self, df_edstays, df_triage, df_patients):
         """
         Merge the four dataframes together and calculate the patient age at the adimission time to emergency department.
         :param df_edstays: table from ED module
         :param df_triage: table from ED module
         :param df_patients: table from HOSP module containing the patient's anchor age and anchor year
-        :param df_admissions: table from HOSP module containing the patient's language (Note: insurance and marital status could be different for a given patient thus are not used in this function)
-        :return: a new combined dataframe with the patient's age and language at the admission time to emergency department
+        :return: a new combined dataframe with the patient's age at the admission time to emergency department
         """ 
-        df_patients_cleaned = df_patients[['subject_id', 'anchor_age', 'anchor_year']].drop_duplicates()
-        # df_admission_cleaned = df_admission[['subject_id', 'insurance', 'marital_status', 'language']].drop_duplicates(subset='subject_id')
-        df_admission_cleaned = df_admission[['subject_id', 'language']].drop_duplicates() 
-        self.df = pd.merge(df_edstays, df_admission_cleaned, on='subject_id', how='left') 
-        self.df = pd.merge(self.df, df_patients_cleaned, on='subject_id', how='left') 
+        df_patients_cleaned = df_patients[['subject_id', 'anchor_age', 'anchor_year']].drop_duplicates() 
+        self.df = pd.merge(df_edstays, df_patients_cleaned, on='subject_id', how='left') 
         self.df['admission_age'] = pd.to_datetime(self.df['intime']).dt.year - self.df['anchor_year'] + self.df['anchor_age'] # calculate age at admission time
         self.df = self.df.drop(columns=['anchor_age', 'anchor_year']) # drop anchor_age and anchor_year and only keep admission_age 
         # Merge these two dataframes along the stay_id column.
