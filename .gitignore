@@ -3,4 +3,5 @@ ed_data/
 hosp_data/
 *.csv.gz
 *.csv
+linear_regression_test.ipynb
 

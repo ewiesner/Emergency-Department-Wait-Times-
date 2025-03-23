@@ -36,6 +36,7 @@ class DataCleaner:
         # Here I compute the target variable, stay length, in terms of hours.
         self.df['stay_length']=pd.to_datetime(self.df['outtime'])-pd.to_datetime(self.df['intime'])
         self.df['stay_length_hours']= self.df['stay_length'].dt.total_seconds() / 3600
+        self.df['stay_length_minutes']= self.df['stay_length'].dt.total_seconds() / 60
 
         # Now I can drop the 'stay_length' variable.
         self.df.drop('stay_length', axis=1, inplace=True)
@@ -44,7 +45,8 @@ class DataCleaner:
         # We should also remove extreme high values for length of stay, as these are probably inaccurate. Looking at the graph, it seems we have a clear break between the two most extreme outliers and the rest of the data, so I am just cutting out the two high values. 
         # May want to revise this cut-off. Currently it is 300 hours.
         stay_length_hours_upper_bound = 300
-        self.df = self.df[(self.df['stay_length_hours'] >= 0) & (self.df['stay_length_hours'] <= stay_length_hours_upper_bound)]
+        stay_length_minutes_upper_bound = 10000
+        self.df = self.df[(self.df['stay_length_hours'] >= 0) & (self.df['stay_length_hours'] <= stay_length_hours_upper_bound) & (self.df['stay_length_minutes'] <= stay_length_minutes_upper_bound)]
 
         # Apply the condition to set temperature values to NaN
         condition_nan_temp = (self.df['temperature'] > 110) | (self.df['temperature'] < 82.4)
@@ -61,20 +63,29 @@ class DataCleaner:
         # Apply the condition to scale temperature values down by 0.10 (if between 824 and 1010)
         condition_temp_scale_down = (self.df['temperature'] >= 824) & (self.df['temperature'] <= 1010)
         self.df.loc[condition_temp_scale_down, 'temperature'] *= 0.10
+
+        # Apply the condition to set 'resprate' to NaN if greater than 400
+        condition_heartrate = self.df['heartrate'] > 400
+        self.df.loc[condition_heartrate, 'heartrate'] = np.nan
         
         # Apply the condition to set 'resprate' to NaN if greater than 300
-        condition_resprate = self.df['resprate'] > 300
+        condition_resprate = (self.df['resprate'] > 100) & (self.df['resprate'] < 20)
         self.df.loc[condition_resprate, 'resprate'] = np.nan
         
         # Apply the condition to set 'sbp' to NaN if greater than 1000
-        condition_sbp = self.df['sbp'] > 1000
+        condition_sbp = self.df['sbp'] > 400
         self.df.loc[condition_sbp, 'sbp'] = np.nan
+
         
         # Apply the condition to set 'dbp' to NaN if greater than 1000
         condition_dbp = self.df['dbp'] > 1000
         self.df.loc[condition_dbp, 'dbp'] = np.nan
-        # Eliminate O2sat above 100. 
-        self.df.loc[(self.df['o2sat'] > 100), 'o2sat'] = np.nan
+        
+        condition_dbp_scale_down = self.df['dbp'] > 400
+        self.df.loc[condition_dbp_scale_down, 'dbp'] /= 10
+
+        # Eliminate O2sat above 100 and below 20. 
+        self.df.loc[(self.df['o2sat'] > 100) & (self.df['o2sat'] < 20), 'o2sat'] = np.nan
 
         #This takes all non-numeric entries to NaN.
         # self.df['pain_cleaned']=pd.to_numeric(self.df['pain'], errors='coerce')
