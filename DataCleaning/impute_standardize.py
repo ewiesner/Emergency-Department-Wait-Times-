@@ -8,7 +8,7 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 
-train = pd.read_csv('train.csv')
+train = pd.read_csv('/Users/tzjsw/Downloads/Erdos/Project-Treatment-Time/Emergency-Department-Wait-Times-/DataCleaning/train.csv')
 train = train.drop(columns = ['subject_id', 'hadm_id', 'stay_id', 'race', 'pain', 'intime', 'outtime', 'chiefcomplaint'])
 
 train['race_condensed'] = train['race_condensed'].fillna('Missing')
