@@ -35,8 +35,7 @@ class DataCleaner:
         self.df['admission_age'] = self.df['admission_age'].apply(lambda x:min(x, 91))
         # Here I compute the target variable, stay length, in terms of hours.
         self.df['stay_length']=pd.to_datetime(self.df['outtime'])-pd.to_datetime(self.df['intime'])
-        # self.df['stay_length_hours']= self.df['stay_length'].dt.total_seconds() / 3600
-        self.df['stay_length_minutes'] = self.df['stay_length'].dt.total_seconds() / 60
+        self.df['stay_length_hours']= self.df['stay_length'].dt.total_seconds() / 3600
 
         # Now I can drop the 'stay_length' variable.
         self.df.drop('stay_length', axis=1, inplace=True)
@@ -44,11 +43,8 @@ class DataCleaner:
         # There are some values for stay_length_hours, which are negative. This is nonsensical. We remove them.
         # We should also remove extreme high values for length of stay, as these are probably inaccurate. Looking at the graph, it seems we have a clear break between the two most extreme outliers and the rest of the data, so I am just cutting out the two high values. 
         # May want to revise this cut-off. Currently it is 300 hours.
-        # stay_length_hours_upper_bound = 300
-        # self.df = self.df[(self.df['stay_length_hours'] >= 0) & (self.df['stay_length_hours'] <= stay_length_hours_upper_bound)]
-
-        stay_length_minutes_upper_bound = 18000
-        self.df = self.df[(self.df['stay_length_minutes'] >= 1) & (self.df['stay_length_minutes'] <= stay_length_minutes_upper_bound)]
+        stay_length_hours_upper_bound = 300
+        self.df = self.df[(self.df['stay_length_hours'] >= 0) & (self.df['stay_length_hours'] <= stay_length_hours_upper_bound)]
 
         # Apply the condition to set temperature values to NaN
         condition_nan_temp = (self.df['temperature'] > 110) | (self.df['temperature'] < 82.4)
