@@ -49,13 +49,10 @@ class DataCleaner:
         # self.df = self.df[(self.df['stay_length_hours'] >= 0) & (self.df['stay_length_hours'] <= stay_length_hours_upper_bound) & (self.df['stay_length_minutes'] <= stay_length_minutes_upper_bound)]
         self.df = self.df[(self.df['stay_length_minutes'] >= 1) & (self.df['stay_length_minutes'] <= stay_length_minutes_upper_bound)]
 
-        # Apply the condition to set temperature values to NaN
-        condition_nan_temp = (self.df['temperature'] > 110) | (self.df['temperature'] < 82.4)
-        self.df.loc[condition_nan_temp, 'temperature'] = np.nan
         
         # Apply the condition to convert temperature from Celsius to Fahrenheit
         condition_fahrenheit = (self.df['temperature'] >= 28) & (self.df['temperature'] <= 43.3)
-        self.df.loc[condition_fahrenheit, 'temperature'] = self.df['temperature'] * 9/5 + 32
+        self.df.loc[condition_fahrenheit, 'temperature'] = self.df.loc[condition_fahrenheit, 'temperature'] * 9/5 + 32
         
         # Apply the condition to scale temperature values up by 10 (if between 8.24 and 10.10)
         condition_temp_scale_up = (self.df['temperature'] >= 8.24) & (self.df['temperature'] <= 10.10)
@@ -65,27 +62,43 @@ class DataCleaner:
         condition_temp_scale_down = (self.df['temperature'] >= 824) & (self.df['temperature'] <= 1010)
         self.df.loc[condition_temp_scale_down, 'temperature'] *= 0.10
 
-        # Apply the condition to set 'resprate' to NaN if greater than 400
+        # Apply the condition to set temperature values to NaN
+        condition_nan_temp = (self.df['temperature'] > 110) | (self.df['temperature'] < 82.4)
+        self.df.loc[condition_nan_temp, 'temperature'] = np.nan
+
+        # Apply the condition to set 'heartrate' to NaN if greater than 400
         condition_heartrate = self.df['heartrate'] > 400
         self.df.loc[condition_heartrate, 'heartrate'] = np.nan
         
-        # Apply the condition to set 'resprate' to NaN if greater than 300
+        # Apply the condition to set 'resprate' to NaN if greater than 100 or less than 20
         condition_resprate = (self.df['resprate'] > 100) | (self.df['resprate'] < 20)
         self.df.loc[condition_resprate, 'resprate'] = np.nan
         
-        # Apply the condition to set 'sbp' to NaN if greater than 1000
-        condition_sbp = self.df['sbp'] > 400
+        # Apply the condition to scale sbp values up by 10 (if between 5 and 30)
+        condition_sbp_scale_up = (self.df['sbp'] >= 5) & (self.df['sbp'] <= 30)
+        self.df.loc[condition_sbp_scale_up, 'sbp'] *= 10
+        
+        # Apply the condition to scale sbp values down by 0.10 (if between 500 and 3000)
+        condition_sbp_scale_down = (self.df['sbp'] >= 500) & (self.df['sbp'] <= 3000)
+        self.df.loc[condition_sbp_scale_down, 'sbp'] *= 0.10
+
+        # Apply the condition to set 'sbp' to NaN if greater than 300 or less than 50
+        condition_sbp = (self.df['sbp'] > 300) | (self.df['sbp'] < 50)
         self.df.loc[condition_sbp, 'sbp'] = np.nan
 
+        # Apply the condition to scale dbp values up by 10 (if between 2 and 20)
+        condition_dbp_scale_up = (self.df['dbp'] >= 2) & (self.df['dbp'] <= 20)
+        self.df.loc[condition_dbp_scale_up, 'dbp'] *= 10
         
-        # Apply the condition to set 'dbp' to NaN if greater than 1000
-        condition_dbp = self.df['dbp'] > 1000
-        self.df.loc[condition_dbp, 'dbp'] = np.nan
-        
-        condition_dbp_scale_down = self.df['dbp'] > 400
-        self.df.loc[condition_dbp_scale_down, 'dbp'] /= 10
+        # Apply the condition to scale dbp values down by 0.10 (if between 200 and 2000)
+        condition_dbp_scale_down = (self.df['dbp'] >= 200) & (self.df['dbp'] <= 2000)
+        self.df.loc[condition_dbp_scale_down, 'dbp'] *= 0.10
 
-        # Eliminate O2sat above 100 and below 20. 
+        # Apply the condition to set 'dbp' to NaN if greater than 200 or less than 20
+        condition_dbp = (self.df['dbp'] > 200) | (self.df['dbp'] < 20)
+        self.df.loc[condition_dbp, 'dbp'] = np.nan
+
+        # Apply the condition to set O2sat to NaN if greater than 100 or less than 20 
         self.df.loc[(self.df['o2sat'] > 100) | (self.df['o2sat'] < 20), 'o2sat'] = np.nan
 
         #This takes all non-numeric entries to NaN.
@@ -107,6 +120,9 @@ class DataCleaner:
         #'left against medical advice'. We also shouldn't use the variable 'disposition' as part of the predictor variable set, so I am going to drop it.
         self.df = self.df[~self.df['disposition'].isin(['ELOPED','LEFT WITHOUT BEING SEEN', 'LEFT AGAINST MEDICAL ADVICE'])]
         self.df = self.df.drop('disposition', axis=1)
+
+        # For chief complaint, drop those rows where chief complaints do not contain any letters
+        self.df = self.df[self.df['chiefcomplaint'].str.contains('[a-zA-Z]', na=False)]
         
     def pain_cleaner(self, entry):
         # Check if it's a range (number-number). For example, 6-9. I will replace this range by the average of the endpoints of the range.
