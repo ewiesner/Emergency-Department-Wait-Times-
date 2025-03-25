@@ -9,6 +9,8 @@ read_csv_gz.py
 CustomClass_test.ipynb
 Cleaning.ipynb
 linear_regression_test.ipynb
+chief_complaint_data/
+*.npy
 =======
 Cleaning_old.ipynb
 Custom_Class_test.ipynb
