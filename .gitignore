@@ -4,4 +4,6 @@ hosp_data/
 *.csv.gz
 *.csv
 linear_regression_test.ipynb
+*.npy
+chief_complaint_data/
 
