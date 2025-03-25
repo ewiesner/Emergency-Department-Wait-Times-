@@ -3,20 +3,16 @@ import pandas as pd
 import re
 
 class DataMerge:
-    def __init__(self, df_edstays, df_triage, df_patients, df_admission):
+    def __init__(self, df_edstays, df_triage, df_patients):
         """
         Merge the four dataframes together and calculate the patient age at the adimission time to emergency department.
         :param df_edstays: table from ED module
         :param df_triage: table from ED module
         :param df_patients: table from HOSP module containing the patient's anchor age and anchor year
-        :param df_admissions: table from HOSP module containing the patient's language (Note: insurance and marital status could be different for a given patient thus are not used in this function)
-        :return: a new combined dataframe with the patient's age and language at the admission time to emergency department
+        :return: a new combined dataframe with the patient's age at the admission time to emergency department
         """ 
-        df_patients_cleaned = df_patients[['subject_id', 'anchor_age', 'anchor_year']].drop_duplicates()
-        # df_admission_cleaned = df_admission[['subject_id', 'insurance', 'marital_status', 'language']].drop_duplicates(subset='subject_id')
-        df_admission_cleaned = df_admission[['subject_id', 'language']].drop_duplicates() 
-        self.df = pd.merge(df_edstays, df_admission_cleaned, on='subject_id', how='left') 
-        self.df = pd.merge(self.df, df_patients_cleaned, on='subject_id', how='left') 
+        df_patients_cleaned = df_patients[['subject_id', 'anchor_age', 'anchor_year']].drop_duplicates() 
+        self.df = pd.merge(df_edstays, df_patients_cleaned, on='subject_id', how='left') 
         self.df['admission_age'] = pd.to_datetime(self.df['intime']).dt.year - self.df['anchor_year'] + self.df['anchor_age'] # calculate age at admission time
         self.df = self.df.drop(columns=['anchor_age', 'anchor_year']) # drop anchor_age and anchor_year and only keep admission_age 
         # Merge these two dataframes along the stay_id column.
@@ -39,7 +35,8 @@ class DataCleaner:
         self.df['admission_age'] = self.df['admission_age'].apply(lambda x:min(x, 91))
         # Here I compute the target variable, stay length, in terms of hours.
         self.df['stay_length']=pd.to_datetime(self.df['outtime'])-pd.to_datetime(self.df['intime'])
-        self.df['stay_length_hours']= self.df['stay_length'].dt.total_seconds() / 3600
+        # self.df['stay_length_hours']= self.df['stay_length'].dt.total_seconds() / 3600
+        self.df['stay_length_minutes']= self.df['stay_length'].dt.total_seconds() / 60
 
         # Now I can drop the 'stay_length' variable.
         self.df.drop('stay_length', axis=1, inplace=True)
@@ -47,16 +44,15 @@ class DataCleaner:
         # There are some values for stay_length_hours, which are negative. This is nonsensical. We remove them.
         # We should also remove extreme high values for length of stay, as these are probably inaccurate. Looking at the graph, it seems we have a clear break between the two most extreme outliers and the rest of the data, so I am just cutting out the two high values. 
         # May want to revise this cut-off. Currently it is 300 hours.
-        stay_length_hours_upper_bound = 300
-        self.df = self.df[(self.df['stay_length_hours'] >= 0) & (self.df['stay_length_hours'] <= stay_length_hours_upper_bound)]
+        # stay_length_hours_upper_bound = 300
+        stay_length_minutes_upper_bound = 10000
+        # self.df = self.df[(self.df['stay_length_hours'] >= 0) & (self.df['stay_length_hours'] <= stay_length_hours_upper_bound) & (self.df['stay_length_minutes'] <= stay_length_minutes_upper_bound)]
+        self.df = self.df[(self.df['stay_length_minutes'] >= 1) & (self.df['stay_length_minutes'] <= stay_length_minutes_upper_bound)]
 
-        # Apply the condition to set temperature values to NaN
-        condition_nan_temp = (self.df['temperature'] > 110) | (self.df['temperature'] < 82.4)
-        self.df.loc[condition_nan_temp, 'temperature'] = np.nan
         
         # Apply the condition to convert temperature from Celsius to Fahrenheit
         condition_fahrenheit = (self.df['temperature'] >= 28) & (self.df['temperature'] <= 43.3)
-        self.df.loc[condition_fahrenheit, 'temperature'] = self.df['temperature'] * 9/5 + 32
+        self.df.loc[condition_fahrenheit, 'temperature'] = self.df.loc[condition_fahrenheit, 'temperature'] * 9/5 + 32
         
         # Apply the condition to scale temperature values up by 10 (if between 8.24 and 10.10)
         condition_temp_scale_up = (self.df['temperature'] >= 8.24) & (self.df['temperature'] <= 10.10)
@@ -65,20 +61,45 @@ class DataCleaner:
         # Apply the condition to scale temperature values down by 0.10 (if between 824 and 1010)
         condition_temp_scale_down = (self.df['temperature'] >= 824) & (self.df['temperature'] <= 1010)
         self.df.loc[condition_temp_scale_down, 'temperature'] *= 0.10
+
+        # Apply the condition to set temperature values to NaN
+        condition_nan_temp = (self.df['temperature'] > 110) | (self.df['temperature'] < 82.4)
+        self.df.loc[condition_nan_temp, 'temperature'] = np.nan
+
+        # Apply the condition to set 'heartrate' to NaN if greater than 400
+        condition_heartrate = self.df['heartrate'] > 400
+        self.df.loc[condition_heartrate, 'heartrate'] = np.nan
         
-        # Apply the condition to set 'resprate' to NaN if greater than 300
-        condition_resprate = self.df['resprate'] > 300
+        # Apply the condition to set 'resprate' to NaN if greater than 100 or less than 20
+        condition_resprate = (self.df['resprate'] > 100) | (self.df['resprate'] < 20)
         self.df.loc[condition_resprate, 'resprate'] = np.nan
         
-        # Apply the condition to set 'sbp' to NaN if greater than 1000
-        condition_sbp = self.df['sbp'] > 1000
-        self.df.loc[condition_sbp, 'sbp'] = np.nan
+        # Apply the condition to scale sbp values up by 10 (if between 5 and 30)
+        condition_sbp_scale_up = (self.df['sbp'] >= 5) & (self.df['sbp'] <= 30)
+        self.df.loc[condition_sbp_scale_up, 'sbp'] *= 10
         
-        # Apply the condition to set 'dbp' to NaN if greater than 1000
-        condition_dbp = self.df['dbp'] > 1000
+        # Apply the condition to scale sbp values down by 0.10 (if between 500 and 3000)
+        condition_sbp_scale_down = (self.df['sbp'] >= 500) & (self.df['sbp'] <= 3000)
+        self.df.loc[condition_sbp_scale_down, 'sbp'] *= 0.10
+
+        # Apply the condition to set 'sbp' to NaN if greater than 300 or less than 50
+        condition_sbp = (self.df['sbp'] > 300) | (self.df['sbp'] < 50)
+        self.df.loc[condition_sbp, 'sbp'] = np.nan
+
+        # Apply the condition to scale dbp values up by 10 (if between 2 and 20)
+        condition_dbp_scale_up = (self.df['dbp'] >= 2) & (self.df['dbp'] <= 20)
+        self.df.loc[condition_dbp_scale_up, 'dbp'] *= 10
+        
+        # Apply the condition to scale dbp values down by 0.10 (if between 200 and 2000)
+        condition_dbp_scale_down = (self.df['dbp'] >= 200) & (self.df['dbp'] <= 2000)
+        self.df.loc[condition_dbp_scale_down, 'dbp'] *= 0.10
+
+        # Apply the condition to set 'dbp' to NaN if greater than 200 or less than 20
+        condition_dbp = (self.df['dbp'] > 200) | (self.df['dbp'] < 20)
         self.df.loc[condition_dbp, 'dbp'] = np.nan
-        # Eliminate O2sat above 100. 
-        self.df.loc[(self.df['o2sat'] > 100), 'o2sat'] = np.nan
+
+        # Apply the condition to set O2sat to NaN if greater than 100 or less than 20 
+        self.df.loc[(self.df['o2sat'] > 100) | (self.df['o2sat'] < 20), 'o2sat'] = np.nan
 
         #This takes all non-numeric entries to NaN.
         # self.df['pain_cleaned']=pd.to_numeric(self.df['pain'], errors='coerce')
@@ -99,6 +120,9 @@ class DataCleaner:
         #'left against medical advice'. We also shouldn't use the variable 'disposition' as part of the predictor variable set, so I am going to drop it.
         self.df = self.df[~self.df['disposition'].isin(['ELOPED','LEFT WITHOUT BEING SEEN', 'LEFT AGAINST MEDICAL ADVICE'])]
         self.df = self.df.drop('disposition', axis=1)
+
+        # For chief complaint, drop those rows where chief complaints do not contain any letters
+        self.df = self.df[self.df['chiefcomplaint'].str.contains('[a-zA-Z]', na=False)]
         
     def pain_cleaner(self, entry):
         # Check if it's a range (number-number). For example, 6-9. I will replace this range by the average of the endpoints of the range.
