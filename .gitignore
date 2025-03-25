@@ -1,4 +1,6 @@
-MIMIC_data/
+ed_data/
+hosp_data/
+chief_complaint_data/
 .DS_Store
 Cleaning_old.ipynb
 Custom_Class_test.ipynb
