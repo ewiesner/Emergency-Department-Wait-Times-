@@ -14,7 +14,7 @@ train = train.drop(columns = ['subject_id', 'hadm_id', 'stay_id', 'race', 'pain'
 train['race_condensed'] = train['race_condensed'].fillna('Missing')
 
 numeric_vars = ['admission_age', 'temperature', 'heartrate', 'resprate', 'o2sat', 
-                'sbp', 'dbp', 'acuity', 'stay_length_hours', 'pain_cleaned_advanced']
+                'sbp', 'dbp', 'acuity', 'stay_length_minutes', 'pain_cleaned_advanced']
 categorical_vars = ['gender', 'arrival_transport', 'race_condensed']
 
 numeric = Pipeline(steps=[
