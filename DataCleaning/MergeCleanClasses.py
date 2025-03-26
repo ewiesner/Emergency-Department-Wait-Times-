@@ -35,6 +35,7 @@ class DataCleaner:
         self.df['admission_age'] = self.df['admission_age'].apply(lambda x:min(x, 91))
         # Here I compute the target variable, stay length, in terms of hours.
         self.df['stay_length']=pd.to_datetime(self.df['outtime'])-pd.to_datetime(self.df['intime'])
+
         # self.df['stay_length_hours']= self.df['stay_length'].dt.total_seconds() / 3600
         self.df['stay_length_minutes']= self.df['stay_length'].dt.total_seconds() / 60
 
@@ -44,6 +45,7 @@ class DataCleaner:
         # There are some values for stay_length_hours, which are negative. This is nonsensical. We remove them.
         # We should also remove extreme high values for length of stay, as these are probably inaccurate. Looking at the graph, it seems we have a clear break between the two most extreme outliers and the rest of the data, so I am just cutting out the two high values. 
         # May want to revise this cut-off. Currently it is 300 hours.
+
         # stay_length_hours_upper_bound = 300
         stay_length_minutes_upper_bound = 10000
         # self.df = self.df[(self.df['stay_length_hours'] >= 0) & (self.df['stay_length_hours'] <= stay_length_hours_upper_bound) & (self.df['stay_length_minutes'] <= stay_length_minutes_upper_bound)]
@@ -53,6 +55,7 @@ class DataCleaner:
         # Apply the condition to convert temperature from Celsius to Fahrenheit
         condition_fahrenheit = (self.df['temperature'] >= 28) & (self.df['temperature'] <= 43.3)
         self.df.loc[condition_fahrenheit, 'temperature'] = self.df.loc[condition_fahrenheit, 'temperature'] * 9/5 + 32
+
         
         # Apply the condition to scale temperature values up by 10 (if between 8.24 and 10.10)
         condition_temp_scale_up = (self.df['temperature'] >= 8.24) & (self.df['temperature'] <= 10.10)
@@ -101,6 +104,7 @@ class DataCleaner:
         # Apply the condition to set O2sat to NaN if greater than 100 or less than 20 
         self.df.loc[(self.df['o2sat'] > 100) | (self.df['o2sat'] < 20), 'o2sat'] = np.nan
 
+
         #This takes all non-numeric entries to NaN.
         # self.df['pain_cleaned']=pd.to_numeric(self.df['pain'], errors='coerce')
 
@@ -121,8 +125,10 @@ class DataCleaner:
         self.df = self.df[~self.df['disposition'].isin(['ELOPED','LEFT WITHOUT BEING SEEN', 'LEFT AGAINST MEDICAL ADVICE'])]
         self.df = self.df.drop('disposition', axis=1)
 
+
         # For chief complaint, drop those rows where chief complaints do not contain any letters
         self.df = self.df[self.df['chiefcomplaint'].str.contains('[a-zA-Z]', na=False)]
+
         
     def pain_cleaner(self, entry):
         # Check if it's a range (number-number). For example, 6-9. I will replace this range by the average of the endpoints of the range.

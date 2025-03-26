@@ -2,3 +2,5 @@ DataCleaning/signin.txt
 *.csv
 .DS_Store
 MIMIC_data/
+ed_data/
+hosp_data/
