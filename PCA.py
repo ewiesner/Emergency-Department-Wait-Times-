@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 import pickle
 
+# This file demonstrates how we apply Principal Component Analysis (PCA).
+# Notably, we train PCA on the training dataset and apply the same transformation to the test dataset.
+
 with open("train_embeddings.pkl", "rb") as f:
     res_loaded = pickle.load(f)
 
